@@ -1,0 +1,18 @@
+<strings>
+    <string id="AppName">Token Quota</string>
+    <string id="DataSourceTitle">Quota data source</string>
+    <string id="Live">Live quota</string>
+    <string id="Mock">Mock scenarios</string>
+    <string id="QuotaUrlTitle">Public quota URL</string>
+    <string id="ScenarioTitle">Mock quota scenario</string>
+    <string id="Default">Example: 5H behind, 7D ahead</string>
+    <string id="Empty">Empty quota</string>
+    <string id="Full">Full quota</string>
+    <string id="OnPace">On pace (marker overlaps fill)</string>
+    <string id="Ahead">Ahead of pace</string>
+    <string id="Behind">Behind pace</string>
+    <string id="Start">Period start (100% overlap)</string>
+    <string id="End">Period end (0% overlap)</string>
+    <string id="ResetSoon">Countdown example: 58m / 4d12h30m</string>
+    <string id="UnderMinute">Under one minute to reset</string>
+</strings>

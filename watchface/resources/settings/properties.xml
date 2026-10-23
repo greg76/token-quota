@@ -1,0 +1,5 @@
+<properties>
+    <property id="DataSource" type="number">0</property>
+    <property id="QuotaUrl" type="string"></property>
+    <property id="MockScenario" type="number">0</property>
+</properties>

@@ -1,0 +1,10 @@
+# Ignore build outputs except the bundled watchface program.
+**/bin/*
+.local/
+*.prg
+*.prg.debug.xml
+*.iq
+.DS_Store
+__pycache__/
+*.py[cod]
+!watchface/bin/TokenQuota.prg

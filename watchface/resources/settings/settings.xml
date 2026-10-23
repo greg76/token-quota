@@ -1,0 +1,25 @@
+<settings>
+    <setting propertyKey="@Properties.DataSource" title="@Strings.DataSourceTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.Live</listEntry>
+            <listEntry value="1">@Strings.Mock</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.QuotaUrl" title="@Strings.QuotaUrlTitle">
+        <settingConfig type="alphaNumeric"/>
+    </setting>
+    <setting propertyKey="@Properties.MockScenario" title="@Strings.ScenarioTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.Default</listEntry>
+            <listEntry value="1">@Strings.Empty</listEntry>
+            <listEntry value="2">@Strings.Full</listEntry>
+            <listEntry value="3">@Strings.OnPace</listEntry>
+            <listEntry value="4">@Strings.Ahead</listEntry>
+            <listEntry value="5">@Strings.Behind</listEntry>
+            <listEntry value="6">@Strings.Start</listEntry>
+            <listEntry value="7">@Strings.End</listEntry>
+            <listEntry value="8">@Strings.ResetSoon</listEntry>
+            <listEntry value="9">@Strings.UnderMinute</listEntry>
+        </settingConfig>
+    </setting>
+</settings>

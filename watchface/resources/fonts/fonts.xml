@@ -1,0 +1,4 @@
+<fonts>
+    <font id="Clock" filename="clock.fnt" filter="0123456789:"/>
+    <font id="Prompt" filename="prompt.fnt"/>
+</fonts>

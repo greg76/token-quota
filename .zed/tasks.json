@@ -1,0 +1,19 @@
+[
+  {
+    "label": "Garmin: Build Instinct 2X",
+    "command": "./scripts/build.sh",
+    "cwd": "$ZED_WORKTREE_ROOT/watchface"
+  },
+  {
+    "label": "Garmin: Run Instinct 2X simulator",
+    "command": "./scripts/run.sh",
+    "cwd": "$ZED_WORKTREE_ROOT/watchface",
+    "allow_concurrent_runs": false
+  },
+  {
+    "label": "Garmin: Test Instinct 2X",
+    "command": "./scripts/run.sh --test",
+    "cwd": "$ZED_WORKTREE_ROOT/watchface",
+    "allow_concurrent_runs": false
+  }
+]
