@@ -15,11 +15,9 @@ flowchart LR
     phone["Garmin Connect app<br/>on your phone"]
     watch["Garmin watch"]
 
-    collector -->|"Publish every 5 min:<br/>quota values + timestamps,<br/>no account identifiers"| store
-    watch -->|"Request every 5 min<br/>via Bluetooth"| phone
-    phone -->|"HTTPS request"| store
-    store -.->|"Quota snapshot"| phone
-    phone -.->|"Reply via Bluetooth"| watch
+    collector --->|"Publish every 5 min:<br/>quota usage + timestamps,<br/>no account identifiers"| store
+    watch -->|"Request quota every 5 min<br/>via Bluetooth"| phone
+    phone -->|"Fetch quota snapshot<br/>via HTTPS"| store
 ```
 
 **Your quota snapshot is public.** Anyone with its URL can read the remaining quota, reset times, and observation time. The collector does not publish prompts, conversations, or Codex authentication credentials. MantleDB receives the snapshot and the write token used to publish it; the token is saved locally in `.local/collector.json` and is not sent to the watch.
