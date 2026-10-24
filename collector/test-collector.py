@@ -2,7 +2,10 @@
 """Collector contract and publication failure checks; no live service calls."""
 
 import copy
+import datetime
 import importlib.util
+import json
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -21,6 +24,14 @@ def limits():
 
 
 class CollectorTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.status = Path(temporary.name) / "collector-status.json"
+        patcher = patch.object(collector, "STATUS", self.status)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def test_maps_windows_by_duration_even_when_reversed(self):
         result = limits()
         bucket = result["rateLimitsByLimitId"]["codex"]
@@ -75,11 +86,37 @@ class CollectorTests(unittest.TestCase):
             collector.publish(config, snapshot)
             self.assertEqual(request.call_args.args, ("https://mantledb.sh/v2/test/data/entry",))
             self.assertEqual(request.call_args.kwargs, {})
+        status = json.loads(self.status.read_text())
+        self.assertEqual(status["url"], "https://mantledb.sh/v2/test/data/entry")
+        self.assertIsNotNone(
+            datetime.datetime.fromisoformat(status["last_success_at"]).utcoffset()
+        )
+        self.assertNotIn("write-secret", self.status.read_text())
+        previous = self.status.read_bytes()
         wrong = copy.deepcopy(snapshot)
         wrong["observedAt"] -= 300
-        with patch.object(collector, "request_json", side_effect=[{}, {}, wrong]):
-            with self.assertRaises(RuntimeError):
-                collector.publish(config, snapshot)
+        with (
+            patch.object(collector, "request_json", side_effect=[{}, {}, wrong]),
+            self.assertRaises(RuntimeError),
+        ):
+            collector.publish(config, snapshot)
+        self.assertEqual(self.status.read_bytes(), previous)
+
+    def test_failed_status_replacement_preserves_previous_success(self):
+        self.status.write_text('{"last_success_at": "previous"}\n')
+        previous = self.status.read_bytes()
+        snapshot = collector.snapshot_from_limits(limits(), NOW)
+        config = {"namespace": "test", "path": "data/entry", "key": "write-secret"}
+        with (
+            patch.object(collector, "request_json", side_effect=[{}, {}, snapshot]),
+            patch.object(
+                collector.os, "replace", side_effect=OSError("replacement failed")
+            ),
+            self.assertRaises(OSError),
+        ):
+            collector.publish(config, snapshot)
+        self.assertEqual(self.status.read_bytes(), previous)
+        self.assertEqual(list(self.status.parent.iterdir()), [self.status])
 
 
 if __name__ == "__main__":

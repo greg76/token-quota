@@ -7,17 +7,19 @@ import fcntl
 import json
 import math
 import os
-from pathlib import Path
 import selectors
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 PROJECT = Path(__file__).resolve().parents[1]
 CONFIG = PROJECT / ".local/collector.json"
+STATUS = PROJECT / ".local/collector-status.json"
 BASE_URL = "https://mantledb.sh/v2"
 RPC_TIMEOUT_SECONDS = 45
 
@@ -148,7 +150,25 @@ def publish(config, snapshot):
     # Deliberately omit the key: validate exactly what the watch can read.
     if request_json(url) != snapshot:
         raise RuntimeError("Anonymous read did not match the published snapshot")
-    print(f"{datetime.datetime.now(datetime.timezone.utc).isoformat()}: published and verified {url}")
+    status = {
+        "last_success_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "url": url,
+    }
+    STATUS.parent.mkdir(parents=True, exist_ok=True)
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", dir=STATUS.parent, delete=False
+        ) as stream:
+            temporary = Path(stream.name)
+            json.dump(status, stream, indent=2)
+            stream.write("\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, STATUS)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
 
 
 def main():

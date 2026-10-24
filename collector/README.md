@@ -56,8 +56,10 @@ Setup installs the per-user macOS job `local.watchface-tokens.collector`, which 
 launchctl print gui/$(id -u)/local.watchface-tokens.collector
 ```
 
-The installed file is `~/Library/LaunchAgents/local.watchface-tokens.collector.plist`. The exact generated job is also saved under `.local/`. Logs are `.local/collector.log` and `.local/collector-error.log`; reinstall after moving this project or changing Python/Codex locations. The logs are not automatically rotated.
+The installed file is `~/Library/LaunchAgents/local.watchface-tokens.collector.plist`. The exact generated job is also saved under `.local/`. Reinstall after moving this project or changing Python/Codex locations.
+
+Read `.local/collector-status.json` to find the last verified publication time (`last_success_at`, in UTC) and public store URL (`url`). Failed runs leave the previous status intact, and dry runs do not update it. The file is created on the first successful publication. An old timestamp can mean collection failed or the Mac was asleep or logged out. Errors independently go to `.local/collector-error.log`, which is not automatically rotated.
 
 ## Test coverage
 
-Eight Python tests cover the collector contract and anonymous publication verification. Six setup tests cover initial installation, retries, namespace reuse, and failure handling without contacting MantleDB or installing jobs.
+Nine Python tests cover the collector contract, anonymous publication verification, and preservation of the last successful status on verification or status replacement failure. Six setup tests cover initial installation, retries, namespace reuse, and failure handling without contacting MantleDB or installing jobs.

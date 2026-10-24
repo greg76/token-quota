@@ -3,11 +3,11 @@
 
 import argparse
 import os
-from pathlib import Path
 import plistlib
 import shutil
 import subprocess
 import sys
+from pathlib import Path
 
 PROJECT = Path(__file__).resolve().parents[1]
 LABEL = "local.watchface-tokens.collector"
@@ -30,13 +30,20 @@ def main():
         parser.error("Codex CLI is not on PATH")
     job = {
         "Label": LABEL,
-        "ProgramArguments": [sys.executable, str(PROJECT / "collector/collect-quota.py"), "--codex", codex],
+        "ProgramArguments": [
+            sys.executable,
+            str(PROJECT / "collector/collect-quota.py"),
+            "--codex",
+            codex,
+        ],
         "WorkingDirectory": str(PROJECT),
-        "EnvironmentVariables": {"PATH": f"{Path(codex).parent}:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"},
+        "EnvironmentVariables": {
+            "PATH": f"{Path(codex).parent}:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+        },
         "RunAtLoad": True,
         "StartInterval": 300,
         "ProcessType": "Background",
-        "StandardOutPath": str(PROJECT / ".local/collector.log"),
+        "StandardOutPath": "/dev/null",
         "StandardErrorPath": str(PROJECT / ".local/collector-error.log"),
     }
     # Prepare the exact job in the project before installing it.
