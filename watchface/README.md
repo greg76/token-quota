@@ -11,7 +11,7 @@ Requires the Connect IQ SDK with the `instinct2x` device installed, Java, and Op
 ```sh
 ./scripts/build.sh             # bin/TokenQuota.prg
 ./scripts/run.sh               # Build and load the Instinct 2X simulator
-./scripts/run.sh --test        # Run twelve tests in the simulator
+./scripts/run.sh --test        # Run thirteen tests in the simulator
 ./scripts/build.sh -r          # Optional release build for sideloading
 ```
 
@@ -23,12 +23,12 @@ The first build generates a local signing key at `../.local/developer_key.der`. 
 
 `./scripts/run.sh --test` builds `bin/TokenQuotaTests.prg` with the Connect IQ compiler's `-t` option, then runs it with the simulator's test runner. This compiles the watchface code together with the tests in [source/WatchFaceTests.mc](source/WatchFaceTests.mc). The test functions and helpers are marked `(:test)` and excluded from normal builds.
 
-The twelve tests check:
+The thirteen tests check:
 
 - Gauge drawing at empty and full quota, and marker contrast at both ends and where markers overlap the fill.
 - Rendering of every mock scenario with Garmin's drawing API, plus clock font width and height limits.
 - Countdown rounding and progression between quota polls.
-- Missing data, invalid clocks, reset windows, and the 15-minute stale-data threshold.
+- Full session quota from a stored payload, missing data, invalid clocks, reset windows, and the 15-minute stale-data threshold.
 - Payload validation, cache replacement rules for older or future observations, and default settings after upgrades.
 
 The command writes results to `bin/test-results.log` and exits successfully only when the runner reports passing tests with no failures or errors. These checks are optional for development and are not required for building or sideloading the watchface. Run without `--test` to inspect the normal watchface; the automated checks do not assess visual readability or verify live network access on a physical watch.
@@ -92,7 +92,7 @@ Select a scenario in the simulator through **File → Edit Persistent Storage �
 | 8 | Countdown example | 35% / 58m | 65% / 4d12h30m |
 | 9 | Under one minute | 10% / 30s | 10% / 30s |
 
-The reset countdown replaces each static window label: right-aligned above the 7D bar with a 5px gap above its marker, and inside the 5H gauge. It floors to whole days at 24h or more, whole hours at 1h or more, and whole minutes below 1h. Examples: 4d12h30m becomes `-4d`, and 58m becomes `-58m`. Positive durations below one minute show `-<1m`; a period with no time remaining shows `0m`. Positions identify the two windows. Mock durations are fixed per scenario rather than ticking down.
+The reset countdown replaces each static window label: right-aligned above the 7D bar with a 5px gap above its marker, and inside the 5H gauge. It selects days at 24h or more, hours at 1h or more, and minutes below 1h, then rounds to the nearest whole unit, with halves rounding up. Examples: 4h59m becomes `-5h`, 4d12h30m becomes `-5d`, and 58m becomes `-58m`. Rounding preserves the selected unit: 59m40s shows `-60m`, and 23h40m shows `-24h`. Positive durations below one minute show `-<1m`; a period with no time remaining shows `0m`. Positions identify the two windows. Mock durations are fixed per scenario rather than ticking down.
 
 Both gauges fill from left to right. White fill represents quota remaining; the thin white marker with a black border represents period remaining. A fill endpoint farther right than the marker means quota is ahead of linear consumption pace. The black border preserves marker visibility when it overlaps the fill.
 
@@ -103,7 +103,7 @@ The target is the Instinct 2X's 176 × 176, 1-bit display. The 5H gauge uses `Wa
 Verified with Connect IQ SDK 9.3.0 and the Instinct 2X Solar simulator (API 3.4.3):
 
 - Normal build passes without warnings; default layout visually inspected for clipping and readability.
-- Twelve simulator tests pass, covering gauge drawing, native rendering, countdown rounding and progression, unavailable and reset windows, stale data, payload validation, clock errors, and cache ordering. Collector checks are documented in [../collector/README.md](../collector/README.md).
+- Thirteen simulator tests pass, covering gauge drawing, native rendering, countdown rounding and progression, unavailable and reset windows, stale data, payload validation, clock errors, and cache ordering. Collector checks are documented in [../collector/README.md](../collector/README.md).
 
 Tests exercise drawing calls and device rendering, but do not automatically assess visual readability. The sideloaded build has been confirmed to fetch and display live data on a physical Instinct 2X. Phone background operation has not yet been verified there.
 

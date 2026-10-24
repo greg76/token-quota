@@ -98,23 +98,31 @@ function renderEveryScenarioAndClockFont(logger) {
 }
 
 (:test)
-function countdownUsesWholeUnitsWithoutNegativeZero(logger) {
-    Test.assertEqual(ResetCountdown.format(390600), "-4d");
+function countdownRoundsLargestUnitWithoutNegativeZero(logger) {
+    Test.assertEqual(ResetCountdown.format(390600), "-5d");
     Test.assertEqual(ResetCountdown.format(3480), "-58m");
     Test.assertEqual(ResetCountdown.format(86400), "-1d");
-    Test.assertEqual(ResetCountdown.format(86399), "-23h");
+    Test.assertEqual(ResetCountdown.format(86399), "-24h");
     Test.assertEqual(ResetCountdown.format(3600), "-1h");
-    Test.assertEqual(ResetCountdown.format(3599), "-59m");
+    Test.assertEqual(ResetCountdown.format(3599), "-60m");
+    Test.assertEqual(ResetCountdown.format(4 * 86400 + 12 * 3600 - 1), "-4d");
+    Test.assertEqual(ResetCountdown.format(4 * 86400 + 12 * 3600), "-5d");
+    Test.assertEqual(ResetCountdown.format(4 * 3600 + 29 * 60), "-4h");
+    Test.assertEqual(ResetCountdown.format(4 * 3600 + 30 * 60 - 1), "-4h");
+    Test.assertEqual(ResetCountdown.format(4 * 3600 + 30 * 60), "-5h");
+    Test.assertEqual(ResetCountdown.format(4 * 3600 + 59 * 60), "-5h");
+    Test.assertEqual(ResetCountdown.format(89), "-1m");
+    Test.assertEqual(ResetCountdown.format(90), "-2m");
     Test.assertEqual(ResetCountdown.format(60), "-1m");
     Test.assertEqual(ResetCountdown.format(59), "-<1m");
     Test.assertEqual(ResetCountdown.format(0), "0m");
     Test.assertEqual(ResetCountdown.format(-1), "0m");
     var example = MockQuotaProvider.forScenario(MockQuotaProvider.EXAMPLE);
     Test.assertEqual(ResetCountdown.format(example.fiveHour.secondsRemaining), "-3h");
-    Test.assertEqual(ResetCountdown.format(example.sevenDay.secondsRemaining), "-4d");
+    Test.assertEqual(ResetCountdown.format(example.sevenDay.secondsRemaining), "-5d");
     var snapshot = MockQuotaProvider.forScenario(MockQuotaProvider.RESET_SOON);
     Test.assertEqual(ResetCountdown.format(snapshot.fiveHour.secondsRemaining), "-58m");
-    Test.assertEqual(ResetCountdown.format(snapshot.sevenDay.secondsRemaining), "-4d");
+    Test.assertEqual(ResetCountdown.format(snapshot.sevenDay.secondsRemaining), "-5d");
     return true;
 }
 
@@ -131,6 +139,26 @@ static function payload() as Lang.Dictionary {
 }
 
 (:test)
+function fullSessionFromStoredPayloadRenders(logger) {
+    var data = {
+        "schemaVersion" => 1, "observedAt" => 1792795512,
+        "weekly" => {"quotaRemaining" => 0.9, "durationSeconds" => 604800, "resetsAt" => 1793382232},
+        "session" => {"quotaRemaining" => 1, "durationSeconds" => 18000, "resetsAt" => 1792813512}
+    };
+    Test.assert(QuotaPayload.valid(data));
+    var snapshot = LiveQuotaProvider.fromPayload(data, 1792795512);
+    Test.assertEqual(snapshot.fiveHour.state, QuotaWindow.CURRENT);
+    Test.assertEqual(snapshot.fiveHour.quotaRemaining, 1);
+    Test.assertEqual(snapshot.fiveHour.secondsRemaining, 18000);
+    Test.assertEqual(LiveQuotaProvider.label(snapshot.fiveHour), "-5h");
+    Test.assertEqual(snapshot.sevenDay.state, QuotaWindow.CURRENT);
+    var dc = new GaugeDrawingProbe();
+    new TokenWatchView().drawFiveHour(dc, snapshot.fiveHour);
+    Test.assertEqual(dc.arcs.size(), 7);
+    return true;
+}
+
+(:test)
 function liveCountdownAndMarkerAdvanceWithoutAnotherPoll(logger) {
     var data = QuotaFixtures.payload();
     var first = LiveQuotaProvider.fromPayload(data, 1800000000);
@@ -139,7 +167,7 @@ function liveCountdownAndMarkerAdvanceWithoutAnotherPoll(logger) {
     Test.assertEqual(later.fiveHour.secondsRemaining, 10500);
     Test.assert(later.fiveHour.periodRemaining < first.fiveHour.periodRemaining);
     Test.assertEqual(later.fiveHour.quotaRemaining, first.fiveHour.quotaRemaining);
-    Test.assertEqual(LiveQuotaProvider.label(later.fiveHour), "-2h");
+    Test.assertEqual(LiveQuotaProvider.label(later.fiveHour), "-3h");
     return true;
 }
 
