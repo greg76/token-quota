@@ -10,14 +10,14 @@ A Python collector on your Mac reads quota from your signed-in Codex CLI and pub
 
 ```mermaid
 flowchart LR
-    collector["Collector on your Mac"]
+    collector["Collector<br>on your Mac"]
     store["MantleDB"]
-    phone["Garmin Connect app<br/>on your phone"]
-    watch["Garmin watch"]
+    phone["Garmin<br>Connect app<br/>on your phone"]
+    watch["Garmin<br>watch"]
 
     collector --->|"Publish every 5 min:<br/>quota usage + timestamps,<br/>no account identifiers"| store
-    watch -->|"Request quota every 5 min<br/>via Bluetooth"| phone
-    phone -->|"Fetch quota snapshot<br/>via HTTPS"| store
+    watch -->|"Request quota<br>every 5 min<br/>via Bluetooth"| phone
+    phone -->|"Fetch quota<br>snapshot<br/>via HTTPS"| store
 ```
 
 **Your quota snapshot is public.** Anyone with its URL can read the remaining quota, reset times, and observation time. The collector does not publish prompts, conversations, or Codex authentication credentials. MantleDB receives the snapshot and the write token used to publish it; the token is saved locally in `.local/collector.json` and is not sent to the watch.
