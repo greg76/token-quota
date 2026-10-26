@@ -87,13 +87,16 @@ function renderEveryScenarioAndClockFont(logger) {
         view.drawBattery(dc);
     }
     var font = WatchUi.loadResource(Rez.Fonts.Clock);
+    // Preserve the sleep-screen font's line height and original advances.
+    Test.assertEqual(dc.getFontHeight(font), 58);
+    Test.assertEqual(dc.getTextWidthInPixels("0:23", font), 111);
+    Test.assertEqual(dc.getTextWidthInPixels("00:23", font), 143);
     var times = ["00:00", "11:11", "20:38", "23:59"];
     for (var i = 0; i < times.size(); i += 1) {
-        dc.drawText(88, 106, font, times[i],
+        dc.drawText(88, 112, font, times[i],
             Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         Test.assert(dc.getTextWidthInPixels(times[i], font) <= 164);
     }
-    Test.assert(dc.getFontHeight(font) <= 70);
     return true;
 }
 

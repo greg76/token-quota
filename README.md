@@ -95,4 +95,4 @@ Private keys, collector configuration, and logs are stored in `.local/` at the r
 
 ## License
 
-This project is available under the [MIT License](LICENSE). The watchface also bundles a generated bitmap font; its source font and separate license are documented in [watchface/assets/fonts/README.md](watchface/assets/fonts/README.md).
+This project is available under the [MIT License](LICENSE). The watchface's generated clock font, its source, and the decoder's license are documented in [Clock font asset](watchface/README.md#clock-font-asset).

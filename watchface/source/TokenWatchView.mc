@@ -32,7 +32,8 @@ class TokenWatchView extends WatchUi.WatchFace {
         var clock = System.getClockTime();
         var time = clock.hour.format("%02d") + ":" + clock.min.format("%02d");
         drawPrompt(dc, clock.sec);
-        dc.drawText(88, 106, clockFont, time,
+        // The visible clock starts at y=84, matching Garmin's sleep clock.
+        dc.drawText(88, 112, clockFont, time,
             Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         drawBattery(dc);
     }
