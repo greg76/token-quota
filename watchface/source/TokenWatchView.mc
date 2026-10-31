@@ -3,6 +3,7 @@ using Toybox.Lang;
 using Toybox.Math;
 using Toybox.System;
 using Toybox.WatchUi;
+using Toybox.Weather;
 
 class TokenWatchView extends WatchUi.WatchFace {
     const PROMPT_X = 8;
@@ -137,13 +138,29 @@ class TokenWatchView extends WatchUi.WatchFace {
             days = stats.batteryInDays.toNumber().format("%d") + "d";
         }
         var textWidth = dc.getTextWidthInPixels(days, Graphics.FONT_XTINY);
-        var left = (176 - (24 + 6 + textWidth)) / 2;
+        var conditions = Weather.getCurrentConditions();
+        var temperature = "--°";
+        var condition = null;
+        if (conditions != null) {
+            condition = conditions.condition;
+            if (conditions.temperature != null) {
+                temperature = Math.round(conditions.temperature).toNumber().format("%d") + "°";
+            }
+        }
+        // Same font and baseline for both values; 12px separates the groups.
+        var weatherWidth = WeatherIcon.WIDTH + 4 + dc.getTextWidthInPixels(temperature, Graphics.FONT_XTINY);
+        var left = ((176 - (30 + textWidth + 12 + weatherWidth)) / 2).toNumber();
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
         dc.setPenWidth(1);
-        dc.drawRectangle(left, 150, 22, 15);
-        dc.fillRectangle(left + 22, 155, 2, 5);
+        WeatherIcon.drawSymbol(dc, left, 150,
+            WeatherIcon.symbolForTime(condition, WeatherDaylight.isNight(conditions)));
+        dc.drawText(left + WeatherIcon.WIDTH + 4, 147, Graphics.FONT_XTINY, temperature, Graphics.TEXT_JUSTIFY_LEFT);
+        var batteryX = left + weatherWidth + 12;
+        var batteryY = 151;
+        dc.drawRectangle(batteryX, batteryY, 22, 15);
+        dc.fillRectangle(batteryX + 22, batteryY + 5, 2, 5);
         var level = (stats.battery * 18 / 100).toNumber();
-        if (level > 0) { dc.fillRectangle(left + 2, 152, level, 11); }
-        dc.drawText(left + 30, 147, Graphics.FONT_XTINY, days, Graphics.TEXT_JUSTIFY_LEFT);
+        if (level > 0) { dc.fillRectangle(batteryX + 2, batteryY + 2, level, 11); }
+        dc.drawText(batteryX + 30, 147, Graphics.FONT_XTINY, days, Graphics.TEXT_JUSTIFY_LEFT);
     }
 }

@@ -58,6 +58,16 @@ cmp "$SETTINGS" "$SETTINGS_DIR/TokenQuota.SET"
 cmp "$PROGRAM" "$APPS_DIR/TokenQuota.prg"
 echo "Verified both copies."
 
+# Remove macOS AppleDouble companions just before ejecting so Garmin does not
+# try to load them as apps. -m also removes companions without a native file.
+if command -v dot_clean >/dev/null 2>&1; then
+    if ! dot_clean -m "$APPS_DIR"; then
+        echo "Deployment succeeded, but metadata cleanup failed. Resolve the error and eject the watch manually before disconnecting." >&2
+        exit 1
+    fi
+    echo "Removed macOS metadata companion files from $APPS_DIR."
+fi
+
 if ! command -v diskutil >/dev/null 2>&1; then
     echo "Automatic ejection requires macOS diskutil. Safely eject the watch manually before disconnecting."
     exit 0

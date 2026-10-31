@@ -1,6 +1,6 @@
 # Token Quota for Garmin Instinct 2X Solar
 
-Check your remaining Codex subscription quota and time until reset from a Garmin Instinct 2X Solar watchface. It shows the five-hour and seven-day quota windows alongside a 24-hour clock and battery level. The included collector supports Codex only; other providers need a collector that produces the [shared payload](quota-payload.md).
+Check your remaining Codex subscription quota and time until reset from a Garmin Instinct 2X Solar watchface. It shows the five-hour and seven-day quota windows alongside a 24-hour clock, weather info and battery level. The included collector supports Codex only. You can also configure an existing public quota URL.
 
 ![Token quota Garmin watchface](watchface/photo.jpg)
 
@@ -24,14 +24,12 @@ flowchart LR
 
 The collector and watch each check every five minutes. Readings can approach ten minutes old during normal operation, and sleep or connection problems can delay them further. The Mac must be awake and logged in for collection; the watch needs a Bluetooth connection to a phone with Internet access and Garmin Connect running in the background.
 
-Live reads have been confirmed on a physical Instinct 2X Solar. Ongoing operation with Garmin Connect in the background still needs a hardware check. The included build targets the Instinct 2X; other watch models have not been verified.
-
 ## Reading the watchface
 
 - The circular gauge shows five-hour quota; the horizontal bar shows seven-day quota.
 - White fill shows quota remaining. The thin outlined marker shows time remaining in the window. Fill extending beyond the marker means quota is ahead of an even spending pace.
-- Countdowns show time until reset, rounded down to whole days, hours, or minutes. `-4d`, for example, means at least four days remain.
-- `SETUP` means no quota URL is configured. `...` means data is unavailable or a reset is awaiting a new reading. `!` marks a reading at least 15 minutes old.
+- Countdowns show time until reset, rounded to the nearest whole day, hour, or minute. For example, 4h59m shows `-5h`. Less than one minute shows `-<1m`; a window at reset shows `0m` until a new reading is needed.
+- `SETUP` means no quota URL is configured. `...` means data is unavailable or a reset is awaiting a new reading. `!` marks a reading at least 15 minutes old. Failed requests preserve the last valid reading.
 
 ## Install without the Garmin SDK (macOS)
 
@@ -47,7 +45,7 @@ Run the commands below from the project root.
 
 This publishes your quota, generates `watchface/bin/TokenQuota.SET`, and starts five-minute updates. On first setup it claims a unique MantleDB namespace; subsequent runs reuse your saved configuration.
 
-Keep this project folder in place. The collector runs while your Mac is awake and you are logged in; rerun setup after moving the folder. Refer to [collector setup](collector/README.md) for logs, custom namespaces, and stopping the schedule.
+Keep this project folder in place; rerun setup after moving it. Refer to [Manage collection](#manage-collection) for status, errors, and stopping the schedule.
 
 ### 2. Connect the watch
 
@@ -63,35 +61,35 @@ Replace `/Volumes/GARMIN` with the watch’s mount path. The script replaces any
 
 After successful ejection, disconnect the cable and choose **Token Quota** in the watch-face picker. Allow at least five minutes for the first reading; Garmin may delay background requests.
 
-## Project layout
+On iOS, enable Background App Refresh and Bluetooth for Garmin Connect, allow cellular data if needed, and avoid force-quitting it. Low Power Mode can delay updates. On Android, allow Garmin Connect to run in the background and remove battery restrictions if updates stall.
 
-| Path | Contents |
-|---|---|
-| [watchface/](watchface/README.md) | Monkey C app, Garmin resources, font assets, build and simulator scripts, and visual references |
-| [collector/](collector/README.md) | Python quota collector, macOS scheduler, and collector tests |
-| [quota-payload.md](quota-payload.md) | JSON payload contract shared by both components |
+## Use an existing quota URL
 
-## Development
-
-Rebuilding or using the simulator requires the Connect IQ SDK with the `instinct2x` device installed, Java, and OpenSSL.
+If you already have a public URL serving the [shared payload](quota-payload.md) (eg. you publish your usage info own your own), skip collector setup and generate the custom settings with Python 3:
 
 ```sh
-./watchface/scripts/build.sh       # watchface/bin/TokenQuota.prg
-./watchface/scripts/run.sh         # Build and launch the simulator
-./watchface/scripts/run.sh --test  # Run simulator tests
+./watchface/scripts/generate-settings.py --url https://mantledb.sh/v2/YOUR-NAMESPACE/data/entry
 ```
 
-`--test` builds a separate program containing the watchface code and automated tests, then runs the tests and exits. It is optional; refer to [Simulator tests](watchface/README.md#simulator-tests) for coverage and output.
+This writes `watchface/bin/TokenQuota.SET`. Use `--output /path/to/TokenQuota.SET` to choose another location. Only the public URL belongs on the watch; keep any write token on your computer. Changing the URL does not require rebuilding the watchface. Generate settings again and repeat the USB deployment to apply it.
 
-Normal builds update the bundled `watchface/bin/TokenQuota.prg`. Include the rebuilt program when publishing changes to the watchface source.
+Sideloaded apps do not expose the normal phone-based Connect IQ settings interface. If your USB transfer tool provides only a file browser, copy `TokenQuota.prg` to `GARMIN/APPS/` and `TokenQuota.SET` to `GARMIN/APPS/SETTINGS/`, then safely eject the watch. The filenames must match, including case.
 
-## Other collectors
+## Manage collection
 
-Other collectors can publish the [shared payload](quota-payload.md). If you already have a public quota URL, use [standalone settings generation](watchface/README.md#sideloaded-settings-file) instead of the Codex setup script. `export-settings.py` is only an optional development helper for settings edited in the simulator.
+To stop scheduled collection and remove its macOS LaunchAgent:
 
-## Local files
+```sh
+./collector/schedule-collector.py remove
+```
 
-Private keys, collector configuration, and logs are stored in `.local/` at the repository root, which `.gitignore` excludes. Do not publish this directory. Generated settings and other build outputs in `watchface/bin/` are ignored; the bundled `TokenQuota.prg` is included in the repository. Keep the existing signing key and collector configuration when moving this project.
+Check `.local/collector-status.json` for the last verified publication time (`last_success_at`, in UTC) and public URL (`url`). Failed runs leave the previous status intact. Errors go to `.local/collector-error.log`, which is not automatically rotated.
+
+## Development documentation
+
+- [Watchface development](watchface/README.md): builds, simulator tests, mock scenarios, rendering, and settings internals.
+- [Collector development](collector/README.md): Codex integration, publication flow, scheduling, and tests.
+- [Shared payload](quota-payload.md): the JSON contract for collectors and the watchface.
 
 ## License
 

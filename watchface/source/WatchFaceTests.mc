@@ -252,3 +252,54 @@ function missingSettingsRequireSetup(logger) {
     Test.assertEqual(QuotaConfig.endpoint("https://example.com/quota"), "https://example.com/quota");
     return true;
 }
+
+(:test)
+function renderWeatherConditions(logger) {
+    var bitmap = new Graphics.BufferedBitmap({:width => 176, :height => 176});
+    var dc = bitmap.getDc();
+    Test.assertEqual(WeatherIcon.kind(null), WeatherIcon.UNKNOWN);
+    Test.assertEqual(WeatherIcon.kind(999), WeatherIcon.UNKNOWN);
+    // All condition values supported by API 3.4, including unknown.
+    for (var condition = 0; condition <= 53; condition += 1) {
+        if (condition < 53) {
+            Test.assert(WeatherIcon.kind(condition) != WeatherIcon.UNKNOWN);
+        }
+        WeatherIcon.draw(dc, 0, 0, condition);
+    }
+    var font = Graphics.FONT_XTINY;
+    var values = ["--°", "-40°", "50°"];
+    for (var i = 0; i < values.size(); i += 1) {
+        var width = 30 + dc.getTextWidthInPixels("--d", font) + 12 + WeatherIcon.WIDTH + 4
+            + dc.getTextWidthInPixels(values[i], font);
+        Test.assert(width <= 152);
+    }
+    return true;
+}
+
+(:test)
+function weatherUsesSunriseAndSunset(logger) {
+    Test.assert(WeatherDaylight.outsideDaylight(599, 600, 1800));
+    Test.assert(!WeatherDaylight.outsideDaylight(600, 600, 1800));
+    Test.assert(!WeatherDaylight.outsideDaylight(1799, 600, 1800));
+    Test.assert(WeatherDaylight.outsideDaylight(1800, 600, 1800));
+    Test.assert(WeatherDaylight.outsideDaylight(2000, 600, 1800));
+    // Daylight straddling the UTC date boundary.
+    Test.assert(!WeatherDaylight.outsideDaylight(100, 1800, 600));
+    Test.assert(WeatherDaylight.outsideDaylight(600, 1800, 600));
+    Test.assert(!WeatherDaylight.outsideDaylight(1800, 1800, 600));
+    Test.assert(WeatherDaylight.nightForTimes(23, 0, null, null));
+    Test.assert(WeatherDaylight.nightForTimes(5, 0, null, null));
+    Test.assert(!WeatherDaylight.nightForTimes(6, 0, null, null));
+    Test.assert(!WeatherDaylight.nightForTimes(17, 0, null, null));
+    Test.assert(WeatherDaylight.nightForTimes(18, 0, null, null));
+    Test.assert(WeatherDaylight.nightForTimes(23, 0, 600, null));
+    // Real solar times take precedence over approximate local hours.
+    Test.assert(!WeatherDaylight.nightForTimes(23, 1200, 600, 1800));
+    Test.assert(WeatherDaylight.nightForTimes(12, 1900, 600, 1800));
+    Test.assertEqual(WeatherIcon.symbolForTime(0, true), WeatherIcon.MOON);
+    Test.assertEqual(WeatherIcon.symbolForTime(0, false), WeatherIcon.SUN);
+    Test.assertEqual(WeatherIcon.symbolForTime(1, true), WeatherIcon.PARTLY_CLOUDY_NIGHT);
+    Test.assertEqual(WeatherIcon.symbolForTime(3, true), WeatherIcon.RAIN);
+    Test.assertEqual(WeatherIcon.symbolForTime(null, true), WeatherIcon.UNKNOWN);
+    return true;
+}

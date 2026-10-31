@@ -1,8 +1,6 @@
-# Token Quota for Garmin Instinct 2X Solar
+# Watchface development
 
-Display remaining five-hour and seven-day quota and time until reset on the Instinct 2X Solar. The included collector reads Codex quota and publishes it through MantleDB. Mock scenarios let you review the layout without live data. The clock uses local device time in 24-hour format. The battery icon uses the device battery level, with Garmin's estimated remaining days beside it. An unavailable estimate displays `--d`.
-
-For installation with the included prebuilt signed [TokenQuota.prg](bin/TokenQuota.prg), follow [Install without the Garmin SDK](../README.md#install-without-the-garmin-sdk-macos). Commands below run from `watchface/`. The collector is documented in [../collector/README.md](../collector/README.md); the shared JSON format is in [../quota-payload.md](../quota-payload.md).
+Build and test the Monkey C watchface for the Garmin Instinct 2X Solar. For installation, configuration, and troubleshooting, refer to the [user guide](../README.md). Commands below run from `watchface/`. The [shared payload](../quota-payload.md) defines the contract with collectors.
 
 ## Build and run
 
@@ -10,18 +8,23 @@ Requires the Connect IQ SDK with the `instinct2x` device installed, Java, and Op
 
 ```sh
 ./scripts/build.sh             # bin/TokenQuota.prg
-./scripts/run.sh               # Build and load the Instinct 2X simulator
-./scripts/run.sh --test        # Run thirteen tests in the simulator
+./scripts/run.sh               # Load the existing build in the Instinct 2X simulator
+./scripts/run.sh --build       # Build and load the simulator
+./scripts/run.sh --build --test # Build and run simulator tests
 ./scripts/build.sh -r          # Optional release build for sideloading
 ```
 
-Zed's task picker includes **Garmin: Build Instinct 2X**, **Garmin: Run Instinct 2X simulator**, and **Garmin: Test Instinct 2X**. The run command stays attached to the simulator until the watch face stops.
+Zed's task picker includes **Garmin: Build Instinct 2X**, **Garmin: Run Instinct 2X simulator**, **Garmin: Build and run Instinct 2X simulator**, and **Garmin: Build and test Instinct 2X**. The run command uses the existing compiled program; add `--build` to rebuild first. It stays attached to the simulator until the watch face stops.
+
+Normal runs also load `bin/TokenQuota.SET` when it exists, including the quota URL configured for watch deployment. Create or update it with `./scripts/generate-settings.py --url YOUR_PUBLIC_QUOTA_URL`, then run the simulator through the script or Zed task. Without this file, the simulator uses its saved settings or app defaults. Each normal launch reloads the file, replacing any settings edited in the simulator; export those edits before relaunching if you want to keep them. Test runs do not import this file.
 
 The first build generates a local signing key at `../.local/developer_key.der`. Keep it if you want later builds to retain the same signing identity. `.local/` and build outputs other than the bundled `bin/TokenQuota.prg` are ignored by Git. Set `CIQ_DEVELOPER_KEY` to use an existing DER signing key.
 
+Normal builds update the bundled `bin/TokenQuota.prg`. Include the rebuilt program when publishing watchface source changes.
+
 ### Simulator tests
 
-`./scripts/run.sh --test` builds `bin/TokenQuotaTests.prg` with the Connect IQ compiler's `-t` option, then runs it with the simulator's test runner. This compiles the watchface code together with the tests in [source/WatchFaceTests.mc](source/WatchFaceTests.mc). The test functions and helpers are marked `(:test)` and excluded from normal builds.
+`./scripts/run.sh --build --test` builds `bin/TokenQuotaTests.prg` with the Connect IQ compiler's `-t` option, then runs it with the simulator's test runner. This compiles the watchface code together with the tests in [source/WatchFaceTests.mc](source/WatchFaceTests.mc). The test functions and helpers are marked `(:test)` and excluded from normal builds.
 
 The thirteen tests check:
 
@@ -31,31 +34,15 @@ The thirteen tests check:
 - Full session quota from a stored payload, missing data, invalid clocks, reset windows, and the 15-minute stale-data threshold.
 - Payload validation, cache replacement rules for older or future observations, and default settings after upgrades.
 
-The command writes results to `bin/test-results.log` and exits successfully only when the runner reports passing tests with no failures or errors. These checks are optional for development and are not required for building or sideloading the watchface. Run without `--test` to inspect the normal watchface; the automated checks do not assess visual readability or verify live network access on a physical watch.
+The command writes results to `bin/test-results.log` and exits successfully only when the runner reports passing tests with no failures or errors. These checks are optional for development and are not required for building or sideloading the watchface. Use `./scripts/run.sh --test` to rerun the existing test build. Run without `--test` to inspect the normal watchface; the automated checks do not assess visual readability or verify live network access on a physical watch.
 
 ## Configure your quota URL
 
 New builds have no bundled quota URL. Live mode shows `SETUP`, leaves the gauges unknown (`...`), and does not schedule requests until **Public quota URL** (`QuotaUrl`) is configured. Mock mode works without a URL. Existing installations retain their saved URL; upgrading does not erase it. Changing application settings clears the cached quota snapshot before polling resumes.
 
-For the included Codex collector, run `../collector/setup-collector.py`. It claims a namespace on first setup, generates `bin/TokenQuota.SET`, and starts the five-minute schedule. Later runs reuse the saved configuration. No manual settings generation is needed for this flow.
+For settings generation and deployment, refer to [Use an existing quota URL](../README.md#use-an-existing-quota-url).
 
-For another collector, generate settings with its public URL. A MantleDB URL has this form:
-
-```text
-https://mantledb.sh/v2/YOUR-NAMESPACE/data/entry
-```
-
-The watch reads this URL from application properties at runtime. Changing it does not require recompiling. Only the public URL belongs on the watch; keep the namespace write token on your computer.
-
-### Sideloaded settings file
-
-Sideloaded apps do not expose the normal phone-based Connect IQ settings interface. You can generate Garmin’s binary `.SET` file directly with Python 3, without Codex, the Garmin SDK, or recompiling the app:
-
-```sh
-./scripts/generate-settings.py --url https://mantledb.sh/v2/YOUR-NAMESPACE/data/entry
-```
-
-This writes `bin/TokenQuota.SET` with live mode selected and your public URL. Use `--output /path/to/TokenQuota.SET` to choose another location. Copy the `.prg` to `GARMIN/APPS/` and the `.SET` to `GARMIN/APPS/SETTINGS/` on the watch. Their basenames and case must match.
+### Settings encoding
 
 The generator matches the SDK 9.3.0 simulator’s settings encoding byte for byte, and its generated file was loaded successfully by the Instinct 2X simulator with an existing compiled watchface. The deployed program and companion settings have also been confirmed to work on a physical Instinct 2X. The encoding is based on observed simulator output rather than a documented Garmin compatibility guarantee. Run `./scripts/test-settings.py` for the standalone checks.
 
@@ -94,8 +81,6 @@ Select a scenario in the simulator through **File → Edit Persistent Storage �
 
 The reset countdown replaces each static window label: right-aligned above the 7D bar with a 5px gap above its marker, and inside the 5H gauge. It selects days at 24h or more, hours at 1h or more, and minutes below 1h, then rounds to the nearest whole unit, with halves rounding up. Examples: 4h59m becomes `-5h`, 4d12h30m becomes `-5d`, and 58m becomes `-58m`. Rounding preserves the selected unit: 59m40s shows `-60m`, and 23h40m shows `-24h`. Positive durations below one minute show `-<1m`; a period with no time remaining shows `0m`. Positions identify the two windows. Mock durations are fixed per scenario rather than ticking down.
 
-Both gauges fill from left to right. White fill represents quota remaining; the thin white marker with a black border represents period remaining. A fill endpoint farther right than the marker means quota is ahead of linear consumption pace. The black border preserves marker visibility when it overlaps the fill.
-
 ## Layout and verification
 
 The target is the Instinct 2X's 176 × 176, 1-bit display. The 5H gauge uses `WatchUi.getSubscreen()` for the physical 62 × 62 circular area at `(113, 0)`. The 7D bar and its right-aligned countdown end at x=95, leaving clearance from the physical overlay. The battery body is 22 × 15 pixels, matching the visible height of its text. The clock uses the exact Garmin sleep-clock bitmap glyphs, with a 58px visible height and a 143px advance for four-digit times. It contains only `0–9` and `:`, is loaded once, and is drawn with one native `drawText()` call centered at `(88, 112)`. The clock clears the prompt and battery row. Other text uses device fonts. Normal watch-face updates show the current minute without a per-second timer. Single-digit hours retain a leading zero.
@@ -131,18 +116,6 @@ Fetch diagnostics are retained in Application.Storage under `quotaFetchStatusV1`
 A missing `DataSource` setting selects live mode. A missing or empty `QuotaUrl` requires setup; there is no fallback public URL. The background task schedules the following five-minute interval before starting its request, so transient request failures do not stop polling.
 
 In the simulator, use **Simulation → Background Events → Temporal Event**, target **Token Quota**, and confirm to trigger a fetch. Live fetching and readable rendering have been verified there. Garmin reference: [background scheduling](https://developer.garmin.com/connect-iq/api-docs/Toybox/Background.html#registerForTemporalEvent-instance_function). Service references: [Codex rate limits](https://learn.chatgpt.com/docs/app-server#6-rate-limits-chatgpt), [MantleDB API](https://mantledb.sh/#api).
-
-## Sideload onto the watch
-
-1. Use the included prebuilt signed `bin/TokenQuota.prg`. Developers can rebuild it with `./scripts/build.sh -r`.
-2. Run `../collector/setup-collector.py` for the included Codex collector. It generates `bin/TokenQuota.SET`; other collectors can use the [configuration instructions](#configure-your-quota-url).
-3. Connect the Instinct 2X over USB and wait for its storage to mount as a filesystem path. If needed, select **System → USB Mode → Mass Storage** on the watch, as described in the [USB connection instructions](../README.md#2-connect-the-watch).
-4. Run `./scripts/deploy.sh /Volumes/GARMIN`, replacing `/Volumes/GARMIN` with the watch’s mount path. The script copies the program to `GARMIN/APPS/TokenQuota.prg` and settings to `GARMIN/APPS/SETTINGS/TokenQuota.SET`, replacing existing files. It checks both source files and requires an existing `GARMIN/APPS` folder before copying. No Garmin SDK or Codex installation is needed for deployment.
-5. The script verifies both copies and ejects the watch using macOS `diskutil`. After successful ejection, disconnect and select **Token Quota** in the watch-face picker. On other platforms, eject manually when prompted. If copying or verification fails, the script stops before ejection.
-
-If your USB transfer tool only provides a file browser rather than a mounted filesystem path, copy the two files manually to those destinations.
-
-Live reads require the watch to be connected by Bluetooth to a phone with Internet access and Garmin Connect allowed to run in the background. Garmin Connect does not need to remain on screen; the Connect IQ Store app is not required for these reads. On iOS, enable Background App Refresh and Bluetooth for Connect, allow cellular data if needed, and avoid force-quitting Connect. Low Power Mode can delay background work. On Android, allow Connect to run in the background and remove battery restrictions if updates stall. This quota feature does not need the location permission used by weather.
 
 Once a quota URL is configured, the first fetch is scheduled immediately, subject to Garmin's minimum five-minute interval since the previous background event and device scheduling. Foreground watch-face code cannot make HTTP requests. Once a reading has been cached, returning to the face displays it immediately while background polling continues.
 
