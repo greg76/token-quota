@@ -31,14 +31,14 @@ def main():
     job = {
         "Label": LABEL,
         "ProgramArguments": [
-            sys.executable,
             str(PROJECT / "collector/collect-quota.py"),
             "--codex",
             codex,
         ],
         "WorkingDirectory": str(PROJECT),
         "EnvironmentVariables": {
-            "PATH": f"{Path(codex).parent}:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+            # The collector's /usr/bin/env shebang must find this Python first.
+            "PATH": f"{Path(sys.executable).parent}:{Path(codex).parent}:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
         },
         "RunAtLoad": True,
         "StartInterval": 300,
