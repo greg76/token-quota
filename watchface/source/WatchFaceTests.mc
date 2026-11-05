@@ -269,7 +269,7 @@ function renderWeatherConditions(logger) {
     var font = Graphics.FONT_XTINY;
     var values = ["--°", "-40°", "50°"];
     for (var i = 0; i < values.size(); i += 1) {
-        var width = 30 + dc.getTextWidthInPixels("--d", font) + 12 + WeatherIcon.WIDTH + 4
+        var width = 25 + dc.getTextWidthInPixels("--d", font) + 12 + WeatherIcon.WIDTH + 4
             + dc.getTextWidthInPixels(values[i], font);
         Test.assert(width <= 152);
     }

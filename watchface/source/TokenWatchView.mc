@@ -149,18 +149,18 @@ class TokenWatchView extends WatchUi.WatchFace {
         }
         // Same font and baseline for both values; 12px separates the groups.
         var weatherWidth = WeatherIcon.WIDTH + 4 + dc.getTextWidthInPixels(temperature, Graphics.FONT_XTINY);
-        var left = ((176 - (30 + textWidth + 12 + weatherWidth)) / 2).toNumber();
+        var left = ((176 - (25 + textWidth + 12 + weatherWidth)) / 2).toNumber();
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
         dc.setPenWidth(1);
         WeatherIcon.drawSymbol(dc, left, 150,
             WeatherIcon.symbolForTime(condition, WeatherDaylight.isNight(conditions)));
         dc.drawText(left + WeatherIcon.WIDTH + 4, 147, Graphics.FONT_XTINY, temperature, Graphics.TEXT_JUSTIFY_LEFT);
         var batteryX = left + weatherWidth + 12;
-        var batteryY = 151;
-        dc.drawRectangle(batteryX, batteryY, 22, 15);
-        dc.fillRectangle(batteryX + 22, batteryY + 5, 2, 5);
-        var level = (stats.battery * 18 / 100).toNumber();
-        if (level > 0) { dc.fillRectangle(batteryX + 2, batteryY + 2, level, 11); }
-        dc.drawText(batteryX + 30, 147, Graphics.FONT_XTINY, days, Graphics.TEXT_JUSTIFY_LEFT);
+        var batteryY = 154;
+        dc.drawRectangle(batteryX, batteryY, 19, 12);
+        dc.fillRectangle(batteryX + 19, batteryY + 3, 1, 6);
+        var level = (stats.battery * 15 / 100).toNumber();
+        if (level > 0) { dc.fillRectangle(batteryX + 2, batteryY + 2, level, 8); }
+        dc.drawText(batteryX + 25, 147, Graphics.FONT_XTINY, days, Graphics.TEXT_JUSTIFY_LEFT);
     }
 }

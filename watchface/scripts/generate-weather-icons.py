@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Export the 14×16 weather-pixel-icons.pxd cells to Monkey C and a preview.
+"""Export the 16×16 weather-pixel-icons-solid.pxd cells to Monkey C and a preview.
 
 Requires Pillow only when regenerating. Normal builds use the checked-in output.
 The Pixelmator document uses black ink on white; the watch uses white on black.
@@ -13,14 +13,14 @@ import zlib
 from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[1]
-WIDTH, HEIGHT = 14, 16
+WIDTH, HEIGHT = 16, 16
 # Cell order in the source document, from left to right.
 CELLS = [
     'UNKNOWN', 'RAIN', 'RAIN_HEAVY', 'SNOW', 'MIX', 'STORM', 'FOG',
     'CLOUD', 'PARTLY_CLOUDY', 'PARTLY_CLOUDY_NIGHT', 'SUN', 'MOON', 'WIND',
 ]
 
-with zipfile.ZipFile(ROOT / 'weather-pixel-icons.pxd') as archive:
+with zipfile.ZipFile(ROOT / 'weather-pixel-icons-solid.pxd') as archive:
     database = sqlite3.connect(':memory:')
     database.deserialize(archive.read('metadata.info'))
     sheet = Image.new('RGBA', (WIDTH * len(CELLS), HEIGHT), 'white')
@@ -42,9 +42,9 @@ with zipfile.ZipFile(ROOT / 'weather-pixel-icons.pxd') as archive:
         pixels = zlib.decompress(data[56 + format_length:], -15)
         assert len(pixels) == stride * height
         layer = Image.frombytes('RGBA', (width, height), pixels)
-        # Pixelmator positions are in points, with two pixels per point.
+        # Pixelmator positions are in points, with two pixels per point and a bottom-left origin.
         x, y = struct.unpack('>dd', info['position'][12:])
-        left, top = x * 2 - width / 2, y * 2 - height / 2
+        left, top = x * 2 - width / 2, HEIGHT - (y * 2 + height / 2)
         assert left.is_integer() and top.is_integer()
         sheet.alpha_composite(layer, (int(left), int(top)))
     database.close()
@@ -55,6 +55,9 @@ for index, name in enumerate(CELLS):
     # Preserve the source's pixel grid; resolve faint alpha edges to 1-bit ink.
     icons[name] = [sum(1 << x for x in range(WIDTH)
                        if cell.getpixel((x, y))[0] < 128) for y in range(HEIGHT)]
+
+# The solid sheet has no unknown symbol; retain the existing question mark.
+icons['UNKNOWN'] = [value << 1 for value in [0, 0, 224, 272, 520, 520, 512, 512, 256, 128, 64, 64, 64, 0, 64, 0]]
 
 source = ROOT / 'source/WeatherIcon.mc'
 text = source.read_text().split('    const WIDTH =')[0].split('    const PIXELS =')[0]
@@ -96,7 +99,7 @@ source.write_text(text)
 
 preview = Image.new('RGB', (700, 580), '#202020')
 draw = ImageDraw.Draw(preview)
-draw.text((16, 12), 'Weather icons: 14 x 16 pixels | actual size + 8x pixel view', fill='white')
+draw.text((16, 12), 'Weather icons: 16 x 16 pixels | actual size + 8x pixel view', fill='white')
 for index, name in enumerate(CELLS):
     x, y = 16 + index % 5 * 138, 42 + index // 5 * 178
     icon = Image.new('1', (WIDTH, HEIGHT))
